@@ -1,0 +1,505 @@
+/* CSS Reset - START */
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video {
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	font: inherit;
+	vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section {
+	display: block;
+}
+body {
+	line-height: 1;
+}
+ol, ul {
+	list-style: none;
+}
+blockquote, q {
+	quotes: none;
+}
+blockquote:before, blockquote:after,
+q:before, q:after {
+	content: '';
+	content: none;
+}
+table {
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+/* CSS Reset - END */
+
+@font-face {
+    font-family: "earlyGameBoy";
+    src: url(./files/Early_GameBoy.ttf); 
+}
+
+html, body {
+    cursor: url("./img/Rainbow-Paintbrush.gif"), default;
+    background-image: url("./img/galaxy.gif");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+    margin: 0;
+}
+
+body {
+    background-color: rgb(0, 23, 62);
+}
+
+.header-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-image: url(./img/header.jpg);
+    background-repeat: repeat;
+    background-size: 35%;
+    height: 120px;
+    border: 2px solid black;
+}
+
+.gameboy {
+    font-family: "earlyGameboy", Arial;
+    text-shadow: black 0.1em 0.17em 0.1em;
+    text-align: center;
+    color: white;
+}
+
+header {
+    color: white;
+    font-size: 40px;
+}
+
+.canvas {
+    padding: 20px 20px;
+    width: 57vw;
+    max-width: 700px;
+    min-width: 700px;
+    margin: auto;
+    height: 480px;
+    max-height: 480px;
+    position: relative;
+    flex-direction: column;
+    background-color: rgb(0, 36, 126);
+}
+
+.flex {
+    justify-content: center;
+    align-items: center;
+    display: flex;
+}
+.flexWrap {
+    display: flex;
+    flex-wrap: wrap;
+}
+.canvas h3{
+    font-size: 30px;
+}
+
+/************************ Tools ************************/
+
+
+/* Right Panel */
+
+#colorText {
+    position: absolute;
+    font-size: 10px;
+    height: 50px;
+    right: 3.5%;
+    top: 25%;
+}
+#bgGridText {
+    position: absolute;
+    font-size: 10px;
+    height: 50px;
+    right: 14%;
+    top: 25%;
+}
+#selectedColor {
+    position: absolute;
+    background-color: white;
+    width: 50px;
+    height: 50px;
+    right: 6.5%;
+    top: 30%;
+    border: 3px dotted white;
+
+}
+#colorPickerText {
+    position: absolute;
+    font-size: 10px;
+    height: 50px;
+    right: 4.4%;
+    top: 43.5%;
+}
+#colorPicker {
+    position: absolute;
+    right: 5.7%;
+    bottom: 40%;
+    width: 70px;
+    height: 70px;
+    cursor: pointer;
+}
+#bgColor {
+    position: absolute;
+    right: 18%;
+    top: 30.5%;
+    width: 35px;
+    height: 35px;
+    cursor: pointer;
+}
+#gridColor {
+    position: absolute;
+    right: 14%;
+    top: 30.5%;
+    width: 35px;
+    height: 35px;
+    cursor: pointer;
+}
+
+#erase {
+    font-family: 'earlyGameboy';
+    position: absolute;
+    right: 5.5%;
+    bottom: 30%;
+    cursor: pointer;
+}
+#musicNotes {
+    width: 50px;
+    height: 50px;
+    position: absolute;
+    right: 6.3%;
+    bottom: 20%;
+}
+#play {
+    font-family: 'earlyGameboy';
+    position: absolute;
+    width: 85px;
+    right: 9.5%;
+    bottom: 13%;
+    cursor: pointer;
+}
+#pause {
+    font-family: 'earlyGameboy';
+    position: absolute;
+    width: 85px;
+    right: 1%;
+    bottom: 13%;
+    cursor: pointer;
+}
+#volUp {
+    font-family: 'earlyGameboy';
+    position: absolute;
+    font-weight: 900;
+    right: 5.2%;
+    bottom: 8%;
+    cursor: pointer;
+}
+#volDown {
+    font-family: 'earlyGameboy';
+    position: absolute;
+    right: 9.5%;
+    bottom: 8%;
+    cursor: pointer;
+}
+#nextTrack {
+    font-family: 'earlyGameboy';
+    position: absolute;
+    right: 3.2%;
+    bottom: 8%;
+    cursor: pointer;
+    font-weight: 900;
+}
+#previousTrack {
+    font-family: 'earlyGameboy';
+    position: absolute;
+    right: 12%;
+    bottom: 8%;
+    cursor: pointer;
+    font-weight: 900;
+}
+#paletteText {
+    position: absolute;
+    font-size: 10px;
+    height: 50px;
+    right: 15%;
+    top: 38.5%;
+}
+#palette1 {
+    position: absolute;
+    border: 2px dotted black;
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    right: 18%;
+    top: 43%;
+    cursor: pointer;
+}
+#palette2 {
+    position: absolute;
+    border: 2px dotted black;
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    right: 18%;
+    top: 47%;
+    cursor: pointer;
+}
+#palette3 {
+    position: absolute;
+    border: 2px dotted black;
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    right: 18%;
+    top: 51%;
+    cursor: pointer;
+}
+#palette4 {
+    position: absolute;
+    border: 2px dotted black;
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    right: 18%;
+    top: 55%;
+    cursor: pointer;
+}
+#palette5 {
+    position: absolute;
+    border: 2px dotted black;
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    right: 18%;
+    top: 59%;
+    cursor: pointer;
+}
+#palette6 {
+    position: absolute;
+    border: 2px dotted black;
+    width: 20px;
+    height: 20px;
+    background-color: white;
+    right: 18%;
+    top: 63%;
+    cursor: pointer;
+}
+#palette1b {
+    position: absolute;
+    text-align: center;
+    font-family: earlyGameboy;
+    font-size: 7px;
+    right: 15%;
+    top: 43.5%;
+    cursor: pointer;
+}
+#palette2b {
+    position: absolute;
+    text-align: center;
+    font-family: earlyGameboy;
+    font-size: 7px;
+    right: 15%;
+    top: 47.5%;
+    cursor: pointer;
+}
+#palette3b {
+    position: absolute;
+    text-align: center;
+    font-family: earlyGameboy;
+    font-size: 7px;
+    right: 15%;
+    top: 51.5%;
+    cursor: pointer;
+}
+#palette4b {
+    position: absolute;
+    text-align: center;
+    font-family: earlyGameboy;
+    font-size: 7px;
+    right: 15%;
+    top: 55.5%;
+    cursor: pointer;
+}
+#palette5b {
+    position: absolute;
+    text-align: center;
+    font-family: earlyGameboy;
+    font-size: 7px;
+    right: 15%;
+    top: 59.5%;
+    cursor: pointer;
+}
+#palette6b {
+    position: absolute;
+    text-align: center;
+    font-family: earlyGameboy;
+    font-size: 7px;
+    right: 15%;
+    top: 63.5%;
+    cursor: pointer;
+}
+
+/* Left Panel */
+
+#eraseAll {
+    font-family: 'earlyGameboy';
+    position: absolute;
+    left: 5%;
+    top: 30%;
+    cursor: pointer;
+
+}
+#saveButton {
+    font-family: 'earlyGameboy';
+    color: white;
+    text-align: center;
+    position: absolute;
+    left: 3.5%;
+    bottom: 27%;
+
+}
+#disk {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    cursor: pointer;
+    left: 6%;
+    bottom: 10%;
+}
+#cleanupDiv {
+    display: flex;
+}
+#cleanUp {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    cursor: pointer;
+    left: 6%;
+    bottom: -45%;
+    display: none;
+}
+#cleanUpText {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    left: 6%;
+    bottom: -30%;
+    display: none;
+}
+#megaman {
+    position: absolute;
+    top: 45%;
+    left: 6.5%;
+    height: 92px;
+    width: 77px;
+}
+#hidden-mega {
+    position: absolute;
+    bottom: 5.9%;
+    left: 47%;
+    height: 85px;
+    width: 85px;
+    cursor: pointer;
+    display: none;
+}
+#hidden-text {
+    position: absolute;
+    bottom: 8%;
+    right: 33%;
+    display: none;
+}
+#mega-life {
+    position: absolute;
+    top: 21%;
+    left: 8%;
+    height: 45px;
+    width: 45px;
+    display: none;
+}
+
+#energy {
+    position: absolute;
+    bottom: 14%;
+    right: 7.68%;
+    height: 20px;
+    width: 15px;
+    cursor: pointer;
+    /* display: none; */
+}
+/************************ Tools ************************/
+
+.pixel {
+    width: 10px;
+    height: 10px;
+    background-color: white;
+    border: 1px solid rgb(135, 135, 135);
+    margin: 0;
+}
+
+#pixelCanvas {
+    width: 700px;
+    max-width: 700px;
+    /* height: 456px;
+    min-height: 456px;
+    max-height: 456px; */
+
+
+}
+
+#startButton {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: "earlyGameboy", Arial;
+    height: 50px;
+    padding: 25px;
+    cursor: inherit;
+    margin: 30px;
+}
+
+#instructions {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: "earlyGameboy", Arial;
+    height: 50px;
+    padding: 25px;
+    cursor: inherit;
+}
+
+
+footer {
+    position: fixed;
+    width: 100%;
+    bottom: 0;
+    display: flex;
+    background-color: #002041;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    margin-bottom: 0;
+}
+
+canvas {
+    margin-top: 50px;
+    display: flex;
+    width: 57%;
+    margin: auto;
+    border: 3px solid red;
+}
