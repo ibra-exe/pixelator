@@ -1,5 +1,6 @@
 # project-1-pixelator
 Project 1 - Codename: Pixelator
+Goal: Create an web app in 5 days
 
 [Link to Github Page](https://pages.git.generalassemb.ly/ibra-exe/project-1-pixelator/)
 
