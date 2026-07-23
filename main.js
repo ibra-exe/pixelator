@@ -41,16 +41,38 @@ $(document).ready(function(){
     $("#selectedColor").css('background','black')
 });
 
-//Coloring — click a pixel, or hold and drag to paint many at once
+//Coloring — click a pixel, or hold and drag to paint. Painting is driven by
+//mousemove (which always fires during a drag) and interpolated along the
+//stroke so fast movements don't leave gaps between pixels.
 var isDrawing = false;
-$(document).on('mouseup', () => { isDrawing = false; });
+var lastX = null, lastY = null;
+
+function paintAt(x, y){
+    var el = document.elementFromPoint(x, y);
+    if(el && el.classList.contains('pixel')){
+        el.style.background = currentColor;
+    }
+}
+function paintLine(x0, y0, x1, y1){
+    var dx = x1 - x0, dy = y1 - y0;
+    var steps = Math.max(1, Math.ceil(Math.hypot(dx, dy) / 4)); // sample every ~4px
+    for(var i = 0; i <= steps; i++){
+        paintAt(x0 + dx * i / steps, y0 + dy * i / steps);
+    }
+}
+
+$(document).on('mouseup', () => { isDrawing = false; lastX = lastY = null; });
+
 $("#pixelCanvas").on('mousedown', '.pixel', (e) => {
     e.preventDefault(); // stop the browser's native text/image drag
     isDrawing = true;
-    $(e.target).css('background', currentColor);
+    lastX = e.clientX; lastY = e.clientY;
+    paintAt(e.clientX, e.clientY);
 });
-$("#pixelCanvas").on('mouseover', '.pixel', (e) => {
-    if(isDrawing){ $(e.target).css('background', currentColor); }
+$("#pixelCanvas").on('mousemove', (e) => {
+    if(!isDrawing){ return; }
+    paintLine(lastX, lastY, e.clientX, e.clientY);
+    lastX = e.clientX; lastY = e.clientY;
 });
 //Palette
 $("#palette1b").on('click', () =>{

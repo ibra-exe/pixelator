@@ -4,8 +4,6 @@ Goal: Create an web app in 5 days
 
 [Link to Live Site](https://ibra-exe.github.io/pixelator/)
 
-[Link to Slides](https://docs.google.com/presentation/d/1GCGFDjWsSSSQx6Q3YVz8-7H64RONh9L6bvEvpmvqztw/edit?usp=sharing)
-
 # Description
 
 Pixelator is a painting app/game, but it uses pixels to create art. using the provided tools, you can create your own pixel art! you can save your creations. it also has a fully functioning Music Player, a dancing MegaMan and an Easter Egg.
