@@ -450,6 +450,8 @@ header {
     background-color: white;
     border: 1px solid rgb(135, 135, 135);
     margin: 0;
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 #pixelCanvas {

@@ -1,8 +1,8 @@
 
 var currentColor = "#000";
+var currentBg = "#ffffff";
 
 var selectedColorBox = $("#selectedColor");
-var capture = $("#save").getContext;
 
 var playingSong = null;
 var musicOn = true;
@@ -17,7 +17,17 @@ var playlist = [song1,song2,song3,song4];
 //Audio Settings
 var audio = document.getElementById("music");
 audio.volume = 0.2;
-audio.play();
+
+// Browsers block autoplay-with-sound until the user interacts with the page.
+// Swallow the rejected promise, then start playback on the first user gesture.
+function tryPlayMusic(){
+    var p = audio.play();
+    if(p && p.catch){ p.catch(function(){}); }
+}
+tryPlayMusic();
+$(document).one('click keydown', function(){
+    if(musicOn){ tryPlayMusic(); }
+});
 
 var charge = document.getElementById("charge");
 charge.volume = 0.7;
@@ -31,19 +41,23 @@ $(document).ready(function(){
     $("#selectedColor").css('background','black')
 });
 
-//Coloring
-$("#pixelCanvas").on('click', (e)=> {
-    
-    console.log("confirmation");
-    $(e.target).css(`background`,`${currentColor}`);
-    console.log(e);
-})
+//Coloring — click a pixel, or hold and drag to paint many at once
+var isDrawing = false;
+$(document).on('mouseup', () => { isDrawing = false; });
+$("#pixelCanvas").on('mousedown', '.pixel', (e) => {
+    e.preventDefault(); // stop the browser's native text/image drag
+    isDrawing = true;
+    $(e.target).css('background', currentColor);
+});
+$("#pixelCanvas").on('mouseover', '.pixel', (e) => {
+    if(isDrawing){ $(e.target).css('background', currentColor); }
+});
 //Palette
 $("#palette1b").on('click', () =>{
 $("#palette1").css('background',currentColor);
 });
 $("#palette1").on('click', () =>{
-currentColor = $("#palette1").css('background');
+currentColor = $("#palette1").css('background-color');
 selectedColorBox.css('background',currentColor);
 console.log("palette1: "+$("#palette1").css('background'));
 });
@@ -52,7 +66,7 @@ $("#palette2b").on('click', () =>{
     $("#palette2").css('background',currentColor);
 });
 $("#palette2").on('click', () =>{
-    currentColor = $("#palette2").css('background');
+    currentColor = $("#palette2").css('background-color');
     selectedColorBox.css('background',currentColor);
 });
 
@@ -60,7 +74,7 @@ $("#palette3b").on('click', () =>{
     $("#palette3").css('background',currentColor);
 });
 $("#palette3").on('click', () =>{
-    currentColor = $("#palette3").css('background');
+    currentColor = $("#palette3").css('background-color');
     selectedColorBox.css('background',currentColor);
 });
 
@@ -68,7 +82,7 @@ $("#palette4b").on('click', () =>{
     $("#palette4").css('background',currentColor);
 });
 $("#palette4").on('click', () =>{
-    currentColor = $("#palette4").css('background');
+    currentColor = $("#palette4").css('background-color');
     selectedColorBox.css('background',currentColor);
 });
 
@@ -76,7 +90,7 @@ $("#palette5b").on('click', () =>{
     $("#palette5").css('background',currentColor);
 });
 $("#palette5").on('click', () =>{
-    currentColor = $("#palette5").css('background');
+    currentColor = $("#palette5").css('background-color');
     selectedColorBox.css('background',currentColor);
 });
 
@@ -84,7 +98,7 @@ $("#palette6b").on('click', () =>{
     $("#palette6").css('background',currentColor);
 });
 $("#palette6").on('click', () =>{
-    currentColor = $("#palette6").css('background');
+    currentColor = $("#palette6").css('background-color');
     selectedColorBox.css('background',currentColor);
 });
 
@@ -171,14 +185,9 @@ $("#previousTrack").on('click', () => {
 
 //Tools
 $("#erase").on('click', () => {
-
-    console.log("selected color: "+selectedColorBox.css("background-color"));
-    $("#colorPicker").value = '#ffff';
-    selectedColorBox.css("background-color","white");
-    currentColor = "#ffffff"
-    console.log("Current Color: "+currentColor);
-    console.log("color cleared!");
-
+    // "Erase" paints with the current background colour so squares blend back in
+    currentColor = currentBg;
+    selectedColorBox.css("background-color", currentBg);
 });
 $("#colorPicker").on('change', (e)=> {
 
@@ -241,19 +250,22 @@ $("#eraseAll").on('click', () => {
 });
 $("#disk").on('click', () => {
     html2canvas(document.querySelector("#capture")).then(canvas => {
-        document.body.appendChild(canvas);
-        $("canvas").attr('id','render');
-        console.log(canvas);
+        canvas.toBlob((blob) => {
+            var link = document.createElement('a');
+            link.download = 'pixelator-art.png';
+            link.href = URL.createObjectURL(blob);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(link.href);
+        });
+
+        Swal.fire(
+            'Masterpiece Saved!',
+            'Your art was downloaded as pixelator-art.png.',
+            'success'
+          );
     });
-
-    $("#cleanUp").css('display','block');
-    $("#cleanUpText").css('display','block');
-
-    Swal.fire(
-        'Image Rendered!',
-        'Your image was rendered below. Scroll down then press \'Right Click > Save Image As\' to save your art.',
-        'success'
-      );
 });
 $("#cleanUp").on('click', () => {
     $("#render").remove();
@@ -261,7 +273,7 @@ $("#cleanUp").on('click', () => {
     $("#cleanUpText").css('display','none');
 });
 $("#bgColor").on('change', (e)=> {
-
+    currentBg = e.target.value;
     $(".pixel").css("background-color",e.target.value);
 });
 $("#gridColor").on('change', (e)=> {
