@@ -18,15 +18,16 @@ var playlist = [song1,song2,song3,song4];
 var audio = document.getElementById("music");
 audio.volume = 0.2;
 
-// Browsers block autoplay-with-sound until the user interacts with the page.
-// Swallow the rejected promise, then start playback on the first user gesture.
+// Browsers block autoplay-with-sound until the user interacts with the page, so
+// calling play() on load only downloaded ~2.7 MB that could never be heard. The
+// audio elements are preload="none"; the first gesture both fetches and starts
+// the track, which then streams as it buffers.
 function tryPlayMusic(){
     var p = audio.play();
     if(p && p.catch){ p.catch(function(){}); }
 }
-tryPlayMusic();
 $(document).one('click keydown', function(){
-    if(musicOn){ tryPlayMusic(); }
+    tryPlayMusic();
 });
 
 var charge = document.getElementById("charge");
@@ -226,8 +227,26 @@ $("#eraseAll").on('click', () => {
         $("#megaman").attr('src', restoreTo).css({"height":"92px","width":"77px"});
     },4000);
 });
+// html2canvas is ~160 KB and only ever needed once someone saves, so it is
+// fetched on the first click instead of on every page load.
+function loadHtml2Canvas(){
+    if(window.html2canvas){ return Promise.resolve(); }
+    if(!loadHtml2Canvas.pending){
+        loadHtml2Canvas.pending = new Promise((resolve, reject) => {
+            var s = document.createElement('script');
+            s.src = './files/html2canvas.min.js';
+            s.onload = resolve;
+            s.onerror = () => { loadHtml2Canvas.pending = null; reject(); };
+            document.head.appendChild(s);
+        });
+    }
+    return loadHtml2Canvas.pending;
+}
+
 $("#disk").on('click', () => {
-    html2canvas(document.querySelector("#capture")).then(canvas => {
+    loadHtml2Canvas().then(() => {
+        return html2canvas(document.querySelector("#capture"));
+    }).then(canvas => {
         canvas.toBlob((blob) => {
             var link = document.createElement('a');
             link.download = 'pixelator-art.png';
@@ -243,6 +262,8 @@ $("#disk").on('click', () => {
             'Your art was downloaded as pixelator-art.png.',
             'success'
           );
+    }).catch(() => {
+        Swal.fire('Could not save', 'The image library failed to load. Check your connection and try again.', 'error');
     });
 });
 $("#bgColor").on('change', (e)=> {

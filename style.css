@@ -56,7 +56,7 @@ table {
 
 html, body {
     cursor: url("./img/Rainbow-Paintbrush.gif"), default;
-    background-image: url("./img/galaxy.gif");
+    background-image: url("./img/galaxy.webp");
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
@@ -76,7 +76,7 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    background-image: url(./img/header.jpg);
+    background-image: url(./img/header.webp);
     background-repeat: repeat;
     background-size: 35%;
     height: 120px;
@@ -136,6 +136,8 @@ button {
 
 /* Retro "menu box" — the NES/GameBoy dialog frame that groups each toolset */
 .box {
+    display: flex;
+    flex-direction: column;
     width: 100%;
     max-width: 225px;
     padding: 10px;
@@ -157,6 +159,10 @@ button {
     flex-wrap: wrap;
     align-items: flex-end;
     justify-content: center;
+    /* fill the box and sit centred, so boxes stretched to a shared row
+       height don't leave all their slack at the bottom */
+    flex: 1 1 auto;
+    align-content: center;
     gap: 10px;
 }
 
@@ -381,12 +387,14 @@ footer {
 /* Tablet and below: canvas on top, tool boxes reflow beneath it */
 @media (max-width: 1023px) {
     /* Dissolve the two panels so every box can be ordered on its own,
-       independent of which column it sits in on desktop. */
+       independent of which column it sits in on desktop. A grid (rather than
+       wrapping flex) keeps every box the same width and gives each row a
+       shared height, so short boxes no longer sit ragged next to tall ones. */
     .app {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: flex-start;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+        justify-items: stretch;
+        align-items: stretch;
         gap: 16px;
     }
 
@@ -396,20 +404,23 @@ footer {
 
     .canvas {
         order: 0;
-        flex: 0 0 100%;
-        margin: 0 auto;
+        grid-column: 1 / -1;
+        justify-self: center;
     }
 
-    /* boxes become cards that sit side by side and wrap */
     .box {
-        flex: 0 1 225px;
         width: auto;
+        max-width: none;
     }
 
-    /* MegaMan takes his own row — otherwise he shares a row with a box,
-       which centres the pair and leaves the box itself off-centre */
+    /* MegaMan spans the full row rather than eating a box-sized cell */
     .mascot {
-        flex: 0 0 100%;
+        grid-column: 1 / -1;
+    }
+
+    #energy {
+        grid-column: 1 / -1;
+        justify-self: end;
     }
 
     /* Ordered by what you reach for while drawing: colour constantly,
@@ -457,9 +468,8 @@ footer {
 
     /* one tidy centred column: every box the same width as the canvas,
        edges aligned, mascot on its own line */
-    .box {
-        flex: 0 0 100%;
-        max-width: none;
+    .app {
+        grid-template-columns: 1fr;
     }
 
     /* bigger tap targets */

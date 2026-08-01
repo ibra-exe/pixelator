@@ -1,0 +1,6 @@
+# These stay in the repo (the README links them) but are not published to
+# GitHub Pages — visitors never request them, and they are 20 MB.
+exclude:
+  - progress
+  - files/wireframe.png
+  - README.md
