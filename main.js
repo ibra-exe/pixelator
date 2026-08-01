@@ -139,85 +139,55 @@ $("#palette6").on('click', () =>{
 });
 
 //Music Buttons
-$("#pause").on('click', () => {
-    audio.pause();
-    musicOn = false;
-    $('#megaman').attr('src','./img/mega-default.png');
 
-})
-$("#play").on('click', () => {
-    audio.play();
-    musicOn = true;
-    $('#megaman').attr('src','./img/megaman.gif');
+// The audio element is the source of truth — autoplay can be blocked and a
+// track can end on its own, so the button label is derived from it rather
+// than tracked separately. Called on click too: .paused flips synchronously
+// but the play/pause events don't, so the label would otherwise lag a tick.
+function syncPlayButton(){
+    var playing = !audio.paused;
+    musicOn = playing;
+    $('#playPause').text(playing ? '❚❚' : '▶')
+                   .attr('aria-label', playing ? 'Pause' : 'Play');
+}
+audio.addEventListener('play', syncPlayButton);
+audio.addEventListener('pause', syncPlayButton);
 
-})
-$("#volUp").on('click', () => {
-    audio.volume = audio.volume + 0.1;
-})
-$("#volDown").on('click', () => {
-    audio.volume = audio.volume - 0.1;
-})
-$("#nextTrack").on('click', () => {
-
-    musicOn = true;
-    var mega = $('#megaman').attr('src');
-    var megaDefault = "./img/mega-default.png";
-    var megaDance1 = "./img/megaman.gif";
-    var megaDance2 = "./img/mega-dance.gif";
-    
-    if(mega==megaDance1){
-        $('#megaman').attr('src','./img/mega-dance.gif');
-    }else if(mega==megaDance2 || mega==megaDefault){
+$("#playPause").on('click', () => {
+    if(audio.paused){
+        tryPlayMusic();
         $('#megaman').attr('src','./img/megaman.gif');
+    } else {
+        audio.pause();
+        $('#megaman').attr('src','./img/mega-default.png');
     }
-
-    if(playingSong==playlist[0]){
-        playingSong = playlist[1];
-        $('#music').attr('src',playlist[1]);
-    } else if(playingSong==playlist[1]){
-        playingSong = playlist[2];
-        $('#music').attr('src',playlist[2]);
-    } else if(playingSong==playlist[2]){
-        playingSong = playlist[3];
-        $('#music').attr('src',playlist[3]);
-    } else if(playingSong==playlist[3]){
-        playingSong = playlist[0];
-        $('#music').attr('src',playlist[0]);
-    }
-    console.log("Song Changed!")
-    console.log("Playing Song: "+playingSong)
+    syncPlayButton();
 });
-$("#previousTrack").on('click', () => {
 
-    musicOn = true;
+$("#volume").on('input', (e) => {
+    audio.volume = Math.min(1, Math.max(0, e.target.value / 100));
+});
+// Next/previous share one implementation instead of two mirrored if-chains.
+// Note the audio element needs .load() after the src changes, otherwise the
+// new track is never actually picked up.
+function changeTrack(delta){
     var mega = $('#megaman').attr('src');
-    var megaDefault = "./img/mega-default.png";
-    var megaDance1 = "./img/megaman.gif";
-    var megaDance2 = "./img/mega-dance.gif";
+    $('#megaman').attr('src', mega.indexOf('megaman.gif') > -1
+        ? './img/mega-dance.gif'
+        : './img/megaman.gif');
 
-    if(mega==megaDance1){
-    $('#megaman').attr('src','./img/mega-dance.gif');
-    }else if(mega==megaDance2 || mega==megaDefault){
-    $('#megaman').attr('src','./img/megaman.gif');
-    }
+    var idx = playlist.indexOf(playingSong);
+    if(idx === -1){ idx = 0; }
+    idx = (idx + delta + playlist.length) % playlist.length;
 
-
-    if(playingSong==playlist[0]){
-        playingSong = playlist[3];
-        $('#music').attr('src',playlist[3]);
-    } else if(playingSong==playlist[1]){
-        playingSong = playlist[0];
-        $('#music').attr('src',playlist[0]);
-    } else if(playingSong==playlist[2]){
-        playingSong = playlist[1];
-        $('#music').attr('src',playlist[1]);
-    } else if(playingSong==playlist[3]){
-        playingSong = playlist[2];
-        $('#music').attr('src',playlist[2]);
-    }
-    console.log("Song Changed!")
-    console.log("Playing Song: "+playingSong)
-});
+    playingSong = playlist[idx];
+    $('#music').attr('src', playingSong);
+    audio.load();
+    audio.volume = Math.min(1, Math.max(0, $("#volume").val() / 100));
+    tryPlayMusic();
+}
+$("#nextTrack").on('click', () => changeTrack(1));
+$("#previousTrack").on('click', () => changeTrack(-1));
 
 //Tools
 $("#erase").on('click', () => {
@@ -235,54 +205,26 @@ $("#colorPicker").on('change', (e)=> {
 
 });
 $("#eraseAll").on('click', () => {
-    
     charge.play();
 
-    if(musicOn==true){
-        if($("#megaman").attr('src')=="./img/megaman.gif"){
+    // Whichever sprite MegaMan is wearing, he charges, fires, then goes back
+    // to it. The blast itself always happens — the old version only cleared
+    // the canvas when the sprite matched one of two exact filenames.
+    var current = $("#megaman").attr('src');
+    var restoreTo = !musicOn ? './img/mega-default.png'
+                  : (current.indexOf('mega-dance') > -1 ? './img/mega-dance.gif'
+                                                        : './img/megaman.gif');
 
-            $("#megaman").attr('src','./img/charge.gif').css({"height":"92px","width": "80px"});
+    $("#megaman").attr('src','./img/charge.gif').css({"height":"92px","width":"80px"});
 
-            setTimeout(()=>{
-                $("#megaman").attr('src','./img/mega-shoot.png').css({"height":"92px","width": "105px"});
-                $(".pixel").css("background",currentBg);
-            },2700);
+    setTimeout(()=>{
+        $("#megaman").attr('src','./img/mega-shoot.png').css({"height":"92px","width":"105px"});
+        $(".pixel").css("background", currentBg);
+    },2700);
 
-            setTimeout(()=>{
-                $("#megaman").attr('src','./img/megaman.gif').css({"height":"92px","width": "77px"});
-            },4000);
-
-        }else if($("#megaman").attr('src')=="./img/mega-dance.gif"){
-
-            $("#megaman").attr('src','./img/charge.gif').css({"height":"92px","width": "80px"});
-
-            setTimeout(()=>{
-                $("#megaman").attr('src','./img/mega-shoot.png').css({"height":"92px","width": "105px"});
-                $(".pixel").css("background",currentBg);
-            },2700);
-
-            setTimeout(()=>{
-                $("#megaman").attr('src','./img/mega-dance.gif').css({"height":"92px","width": "77px"});
-            },4000);
-
-        }
-        
-    }else if(musicOn==false){
-        
-        $("#megaman").attr('src','./img/charge.gif').css({"height":"92px","width": "80px"});
-        setTimeout(()=>{
-            $("#megaman").attr('src','./img/mega-shoot.png').css({"height":"92px","width": "105px"});
-            $(".pixel").css("background",currentBg);
-        },2700);
-        
-        setTimeout(()=>{
-
-            $("#megaman").attr('src','./img/mega-default.png').css({"height":"92px","width": "77px"});
-        },4000);
-    }
-    
-
-
+    setTimeout(()=>{
+        $("#megaman").attr('src', restoreTo).css({"height":"92px","width":"77px"});
+    },4000);
 });
 $("#disk").on('click', () => {
     html2canvas(document.querySelector("#capture")).then(canvas => {

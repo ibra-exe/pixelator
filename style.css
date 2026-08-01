@@ -108,7 +108,7 @@ button {
     display: grid;
     /* the middle column needs a definite width, otherwise the canvas
        shrink-wraps and the fr-sized pixel cells collapse to nothing */
-    grid-template-columns: minmax(150px, 0.75fr) minmax(0, 740px) minmax(190px, 0.95fr);
+    grid-template-columns: minmax(160px, 1fr) minmax(0, 740px) minmax(160px, 1fr);
     align-items: start;
     justify-items: center;
     gap: 18px;
@@ -126,13 +126,6 @@ button {
     gap: 12px;
 }
 
-.tool-group {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-}
-
 .row {
     display: flex;
     align-items: center;
@@ -141,9 +134,55 @@ button {
     gap: 6px;
 }
 
-.label {
-    font-size: 10px;
-    line-height: 1.4;
+/* Retro "menu box" — the NES/GameBoy dialog frame that groups each toolset */
+.box {
+    width: 100%;
+    max-width: 225px;
+    padding: 10px;
+    background: rgba(0, 18, 52, 0.82);
+    border: 2px solid #7fb2ff;
+    box-shadow: 0 0 0 2px #00102a, 4px 4px 0 rgba(0, 0, 0, 0.45);
+}
+
+.box-title {
+    font-size: 9px;
+    letter-spacing: 1px;
+    padding-bottom: 6px;
+    margin-bottom: 9px;
+    border-bottom: 2px dotted rgba(127, 178, 255, 0.55);
+}
+
+.box-body {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 10px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+
+.field-full {
+    width: 100%;
+}
+
+.field-label {
+    font-size: 8px;
+    line-height: 1.3;
+    color: #cfe1ff;
+    text-shadow: black 0.1em 0.15em 0.1em;
+}
+
+.mascot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
 }
 
 /************************ Canvas ************************/
@@ -254,19 +293,23 @@ button {
 
 /* Music */
 #musicNotes {
-    width: 40px;
-    height: 40px;
+    width: 34px;
+    height: 34px;
 }
 
-#play,
-#pause {
-    width: 85px;
+.transport {
+    gap: 8px;
 }
 
-#volUp,
-#nextTrack,
-#previousTrack {
+.transport button {
     font-weight: 900;
+    min-width: 40px;
+}
+
+input[type="range"] {
+    width: 100%;
+    accent-color: #7fb2ff;
+    cursor: pointer;
 }
 
 #energy {
@@ -274,15 +317,10 @@ button {
     width: 15px;
     cursor: pointer;
     align-self: flex-end;
+    opacity: 0.85;
 }
 
 /* Left panel bits */
-#saveButton {
-    color: white;
-    text-align: center;
-    line-height: 1.4;
-}
-
 #disk {
     width: 100px;
     height: 100px;
@@ -349,16 +387,14 @@ footer {
         flex-direction: row;
         flex-wrap: wrap;
         justify-content: center;
-        align-items: center;
-        gap: 20px;
-    }
-
-    .panel-right {
         align-items: flex-start;
+        gap: 16px;
     }
 
-    .music {
-        flex: none;
+    /* boxes become cards that sit side by side and wrap */
+    .box {
+        flex: 0 1 225px;
+        width: auto;
     }
 }
 
