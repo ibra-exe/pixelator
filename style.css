@@ -8,8 +8,8 @@ b, u, i, center,
 dl, dt, dd, ol, ul, li,
 fieldset, form, label, legend,
 table, caption, tbody, tfoot, thead, tr, th, td,
-article, aside, canvas, details, embed, 
-figure, figcaption, footer, header, hgroup, 
+article, aside, canvas, details, embed,
+figure, figcaption, footer, header, hgroup,
 menu, nav, output, ruby, section, summary,
 time, mark, audio, video {
 	margin: 0;
@@ -20,7 +20,7 @@ time, mark, audio, video {
 	vertical-align: baseline;
 }
 /* HTML5 display-role reset for older browsers */
-article, aside, details, figcaption, figure, 
+article, aside, details, figcaption, figure,
 footer, header, hgroup, menu, nav, section {
 	display: block;
 }
@@ -44,9 +44,14 @@ table {
 }
 /* CSS Reset - END */
 
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
 @font-face {
     font-family: "earlyGameBoy";
-    src: url(./files/Early_GameBoy.ttf); 
+    src: url(./files/Early_GameBoy.ttf);
+    font-display: swap;
 }
 
 html, body {
@@ -55,11 +60,16 @@ html, body {
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
+    background-attachment: fixed;
     margin: 0;
 }
 
 body {
     background-color: rgb(0, 23, 62);
+    /* sticky footer: content grows, footer always sits at the bottom */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
 }
 
 .header-container {
@@ -71,6 +81,7 @@ body {
     background-size: 35%;
     height: 120px;
     border: 2px solid black;
+    flex: none;
 }
 
 .gameboy {
@@ -85,14 +96,64 @@ header {
     font-size: 40px;
 }
 
+button {
+    font-family: "earlyGameboy", Arial;
+    cursor: pointer;
+    padding: 6px 10px;
+}
+
+/************************ Layout ************************/
+
+.app {
+    display: grid;
+    /* the middle column needs a definite width, otherwise the canvas
+       shrink-wraps and the fr-sized pixel cells collapse to nothing */
+    grid-template-columns: minmax(150px, 0.75fr) minmax(0, 740px) minmax(190px, 0.95fr);
+    align-items: start;
+    justify-items: center;
+    gap: 18px;
+    width: 100%;
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 20px;
+    flex: 1 0 auto;
+}
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+}
+
+.tool-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.label {
+    font-size: 10px;
+    line-height: 1.4;
+}
+
+/************************ Canvas ************************/
+
 .canvas {
-    padding: 20px 20px;
-    width: 57vw;
-    max-width: 700px;
-    min-width: 700px;
-    margin: auto;
-    height: 480px;
-    max-height: 480px;
+    padding: 20px;
+    width: 100%;
+    max-width: 740px;
+    justify-self: stretch;
+    min-height: 480px;
     position: relative;
     flex-direction: column;
     background-color: rgb(0, 36, 126);
@@ -103,405 +164,256 @@ header {
     align-items: center;
     display: flex;
 }
-.flexWrap {
-    display: flex;
-    flex-wrap: wrap;
-}
-.canvas h3{
+
+.canvas h3 {
     font-size: 30px;
-}
-
-/************************ Tools ************************/
-
-
-/* Right Panel */
-
-#colorText {
-    position: absolute;
-    font-size: 10px;
-    height: 50px;
-    right: 3.5%;
-    top: 25%;
-}
-#bgGridText {
-    position: absolute;
-    font-size: 10px;
-    height: 50px;
-    right: 14%;
-    top: 25%;
-}
-#selectedColor {
-    position: absolute;
-    background-color: white;
-    width: 50px;
-    height: 50px;
-    right: 6.5%;
-    top: 30%;
-    border: 3px dotted white;
-
-}
-#colorPickerText {
-    position: absolute;
-    font-size: 10px;
-    height: 50px;
-    right: 4.4%;
-    top: 43.5%;
-}
-#colorPicker {
-    position: absolute;
-    right: 5.7%;
-    bottom: 40%;
-    width: 70px;
-    height: 70px;
-    cursor: pointer;
-}
-#bgColor {
-    position: absolute;
-    right: 18%;
-    top: 30.5%;
-    width: 35px;
-    height: 35px;
-    cursor: pointer;
-}
-#gridColor {
-    position: absolute;
-    right: 14%;
-    top: 30.5%;
-    width: 35px;
-    height: 35px;
-    cursor: pointer;
-}
-
-#erase {
-    font-family: 'earlyGameboy';
-    position: absolute;
-    right: 5.5%;
-    bottom: 30%;
-    cursor: pointer;
-}
-#musicNotes {
-    width: 50px;
-    height: 50px;
-    position: absolute;
-    right: 6.3%;
-    bottom: 20%;
-}
-#play {
-    font-family: 'earlyGameboy';
-    position: absolute;
-    width: 85px;
-    right: 9.5%;
-    bottom: 13%;
-    cursor: pointer;
-}
-#pause {
-    font-family: 'earlyGameboy';
-    position: absolute;
-    width: 85px;
-    right: 1%;
-    bottom: 13%;
-    cursor: pointer;
-}
-#volUp {
-    font-family: 'earlyGameboy';
-    position: absolute;
-    font-weight: 900;
-    right: 5.2%;
-    bottom: 8%;
-    cursor: pointer;
-}
-#volDown {
-    font-family: 'earlyGameboy';
-    position: absolute;
-    right: 9.5%;
-    bottom: 8%;
-    cursor: pointer;
-}
-#nextTrack {
-    font-family: 'earlyGameboy';
-    position: absolute;
-    right: 3.2%;
-    bottom: 8%;
-    cursor: pointer;
-    font-weight: 900;
-}
-#previousTrack {
-    font-family: 'earlyGameboy';
-    position: absolute;
-    right: 12%;
-    bottom: 8%;
-    cursor: pointer;
-    font-weight: 900;
-}
-#paletteText {
-    position: absolute;
-    font-size: 10px;
-    height: 50px;
-    right: 15%;
-    top: 38.5%;
-}
-#palette1 {
-    position: absolute;
-    border: 2px dotted black;
-    width: 20px;
-    height: 20px;
-    background-color: white;
-    right: 18%;
-    top: 43%;
-    cursor: pointer;
-}
-#palette2 {
-    position: absolute;
-    border: 2px dotted black;
-    width: 20px;
-    height: 20px;
-    background-color: white;
-    right: 18%;
-    top: 47%;
-    cursor: pointer;
-}
-#palette3 {
-    position: absolute;
-    border: 2px dotted black;
-    width: 20px;
-    height: 20px;
-    background-color: white;
-    right: 18%;
-    top: 51%;
-    cursor: pointer;
-}
-#palette4 {
-    position: absolute;
-    border: 2px dotted black;
-    width: 20px;
-    height: 20px;
-    background-color: white;
-    right: 18%;
-    top: 55%;
-    cursor: pointer;
-}
-#palette5 {
-    position: absolute;
-    border: 2px dotted black;
-    width: 20px;
-    height: 20px;
-    background-color: white;
-    right: 18%;
-    top: 59%;
-    cursor: pointer;
-}
-#palette6 {
-    position: absolute;
-    border: 2px dotted black;
-    width: 20px;
-    height: 20px;
-    background-color: white;
-    right: 18%;
-    top: 63%;
-    cursor: pointer;
-}
-#palette1b {
-    position: absolute;
     text-align: center;
-    font-family: earlyGameboy;
-    font-size: 7px;
-    right: 15%;
-    top: 43.5%;
-    cursor: pointer;
-}
-#palette2b {
-    position: absolute;
-    text-align: center;
-    font-family: earlyGameboy;
-    font-size: 7px;
-    right: 15%;
-    top: 47.5%;
-    cursor: pointer;
-}
-#palette3b {
-    position: absolute;
-    text-align: center;
-    font-family: earlyGameboy;
-    font-size: 7px;
-    right: 15%;
-    top: 51.5%;
-    cursor: pointer;
-}
-#palette4b {
-    position: absolute;
-    text-align: center;
-    font-family: earlyGameboy;
-    font-size: 7px;
-    right: 15%;
-    top: 55.5%;
-    cursor: pointer;
-}
-#palette5b {
-    position: absolute;
-    text-align: center;
-    font-family: earlyGameboy;
-    font-size: 7px;
-    right: 15%;
-    top: 59.5%;
-    cursor: pointer;
-}
-#palette6b {
-    position: absolute;
-    text-align: center;
-    font-family: earlyGameboy;
-    font-size: 7px;
-    right: 15%;
-    top: 63.5%;
-    cursor: pointer;
 }
 
-/* Left Panel */
-
-#eraseAll {
-    font-family: 'earlyGameboy';
-    position: absolute;
-    left: 5%;
-    top: 30%;
-    cursor: pointer;
-
+#pixelCanvas {
+    width: 100%;
+    /* --cols is set by main.js based on the viewport when the grid is built */
+    display: grid;
+    grid-template-columns: repeat(var(--cols, 58), 1fr);
+    /* let a finger draw instead of scrolling the page */
+    touch-action: none;
 }
-#saveButton {
-    font-family: 'earlyGameboy';
-    color: white;
-    text-align: center;
-    position: absolute;
-    left: 3.5%;
-    bottom: 27%;
-
-}
-#disk {
-    position: absolute;
-    width: 100px;
-    height: 100px;
-    cursor: pointer;
-    left: 6%;
-    bottom: 10%;
-}
-#cleanupDiv {
-    display: flex;
-}
-#cleanUp {
-    position: absolute;
-    width: 100px;
-    height: 100px;
-    cursor: pointer;
-    left: 6%;
-    bottom: -45%;
-    display: none;
-}
-#cleanUpText {
-    position: absolute;
-    width: 100px;
-    height: 100px;
-    left: 6%;
-    bottom: -30%;
-    display: none;
-}
-#megaman {
-    position: absolute;
-    top: 45%;
-    left: 6.5%;
-    height: 92px;
-    width: 77px;
-}
-#hidden-mega {
-    position: absolute;
-    bottom: 5.9%;
-    left: 47%;
-    height: 85px;
-    width: 85px;
-    cursor: pointer;
-    display: none;
-}
-#hidden-text {
-    position: absolute;
-    bottom: 8%;
-    right: 33%;
-    display: none;
-}
-#mega-life {
-    position: absolute;
-    top: 21%;
-    left: 8%;
-    height: 45px;
-    width: 45px;
-    display: none;
-}
-
-#energy {
-    position: absolute;
-    bottom: 14%;
-    right: 7.68%;
-    height: 20px;
-    width: 15px;
-    cursor: pointer;
-    /* display: none; */
-}
-/************************ Tools ************************/
 
 .pixel {
-    width: 10px;
-    height: 10px;
+    aspect-ratio: 1 / 1;
     background-color: white;
     border: 1px solid rgb(135, 135, 135);
-    margin: 0;
     -webkit-user-select: none;
     user-select: none;
 }
 
-#pixelCanvas {
-    width: 700px;
-    max-width: 700px;
-    /* height: 456px;
-    min-height: 456px;
-    max-height: 456px; */
-
-
-}
-
-#startButton {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: "earlyGameboy", Arial;
-    height: 50px;
-    padding: 25px;
-    cursor: inherit;
-    margin: 30px;
-}
-
+#startButton,
 #instructions {
     display: flex;
     justify-content: center;
     align-items: center;
     font-family: "earlyGameboy", Arial;
-    height: 50px;
+    min-height: 50px;
     padding: 25px;
     cursor: inherit;
+    text-align: center;
 }
 
+#startButton {
+    margin: 30px;
+}
+
+/************************ Tools ************************/
+
+#selectedColor {
+    width: 50px;
+    height: 50px;
+    background-color: black;
+    border: 3px dotted white;
+}
+
+#colorPicker {
+    width: 60px;
+    height: 60px;
+    cursor: pointer;
+}
+
+#bgColor,
+#gridColor {
+    width: 35px;
+    height: 35px;
+    cursor: pointer;
+}
+
+/* Palette */
+.palette-grid {
+    display: grid;
+    grid-template-columns: repeat(2, auto);
+    gap: 5px 12px;
+}
+
+.palette-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.swatch {
+    width: 22px;
+    height: 22px;
+    border: 2px dotted black;
+    background-color: white;
+    cursor: pointer;
+    flex: none;
+}
+
+.palette-row button {
+    font-size: 7px;
+    padding: 4px 6px;
+}
+
+/* Music */
+#musicNotes {
+    width: 40px;
+    height: 40px;
+}
+
+#play,
+#pause {
+    width: 85px;
+}
+
+#volUp,
+#nextTrack,
+#previousTrack {
+    font-weight: 900;
+}
+
+#energy {
+    height: 20px;
+    width: 15px;
+    cursor: pointer;
+    align-self: flex-end;
+}
+
+/* Left panel bits */
+#saveButton {
+    color: white;
+    text-align: center;
+    line-height: 1.4;
+}
+
+#disk {
+    width: 100px;
+    height: 100px;
+    cursor: pointer;
+}
+
+#megaman {
+    height: 92px;
+    width: 77px;
+}
+
+#mega-life {
+    height: 45px;
+    width: 45px;
+    display: none;
+}
+
+/* Easter egg */
+.easter-egg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 20px;
+    flex: none;
+}
+
+#hidden-mega {
+    height: 85px;
+    width: 85px;
+    cursor: pointer;
+    display: none;
+}
+
+#hidden-text {
+    display: none;
+}
 
 footer {
-    position: fixed;
     width: 100%;
-    bottom: 0;
     display: flex;
     background-color: #002041;
     align-items: center;
     justify-content: center;
     height: 40px;
-    margin-bottom: 0;
+    flex: none;
 }
 
-canvas {
-    margin-top: 50px;
-    display: flex;
-    width: 57%;
-    margin: auto;
-    border: 3px solid red;
+/************************ Responsive ************************/
+
+/* Tablet and below: canvas on top, tool panels reflow beneath it */
+@media (max-width: 1023px) {
+    .app {
+        grid-template-columns: 1fr;
+        justify-items: stretch;
+    }
+
+    .canvas {
+        order: -1;
+        margin: 0 auto;
+    }
+
+    .panel {
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+    }
+
+    .panel-right {
+        align-items: flex-start;
+    }
+
+    .music {
+        flex: none;
+    }
+}
+
+/* Phones */
+@media (max-width: 639px) {
+    .header-container {
+        height: 80px;
+        background-size: 60%;
+    }
+
+    header {
+        font-size: 24px;
+    }
+
+    .app {
+        padding: 10px;
+        gap: 14px;
+    }
+
+    .canvas {
+        padding: 10px;
+        min-height: 0;
+    }
+
+    .canvas h3 {
+        font-size: 20px;
+    }
+
+    #startButton,
+    #instructions {
+        padding: 18px;
+        margin: 12px;
+    }
+
+    .panel {
+        gap: 14px;
+    }
+
+    /* bigger tap targets */
+    button {
+        min-height: 40px;
+        padding: 8px 12px;
+    }
+
+    .palette-row button {
+        min-height: 32px;
+    }
+
+    #disk {
+        width: 70px;
+        height: 70px;
+    }
+
+    #colorPicker {
+        width: 56px;
+        height: 56px;
+    }
 }

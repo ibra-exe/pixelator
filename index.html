@@ -3,108 +3,150 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Pixelator - a retro pixel art painting app. Draw, pick colours, save your masterpiece, and hunt for the hidden MegaMan.">
+    <meta name="theme-color" content="#001a3e">
     <title>Pixelator</title>
     <link rel="stylesheet" href="./style.css">
     <link rel="icon" href="./img/star.gif" type="image/gif">
 
 </head>
 <body>
-    
+
     <div class="header-container">
         <header>
             <h1 class="gameboy">Pixelator</h1>
         </header>
     </div>
 
-    <div>
-        <input type=color id="colorPicker">
-        <input type=color id="bgColor">
-        <input type=color id="gridColor">
-        <p class="gameboy" id="bgGridText">BG and Grid</p>
-        <button id="erase">Erase</button>
-        <button id="eraseAll">Erase All</button>
-        <img src="./img/music-notes.gif" id="musicNotes" />
-        <button id="play">▶ Play</button>
-        <button id="pause">❚❚ Pause</button>
-        <button id="volUp">+</button>
-        <button id="volDown">-</button>
-        <button id="nextTrack">»</button>
-        <button id="previousTrack">«</button>
-        <p id="saveButton">Save <br /> Masterpiece</p>
-        <img src="./img/save.png" id="disk" />
+    <main class="app">
 
-        <p class="gameboy" id="cleanUpText">Click X when you're done saving.</p>
-        <img src="./img/x.png" id="cleanUp" />
-        <div id="selectedColor"></div>
-        <p class="gameboy" id="colorText">Selected Color</p>
-        <p class="gameboy" id="colorPickerText">Color Picker</p>
-        <img src="./img/megaman.gif" id="megaman" />
-        <img src="./img/hidden-mega.gif" id="hidden-mega" />
-        <img src="./img/mega-life.png" id="mega-life" />
-        <img src="./img/energy.png" id="energy" />
-        <p id="hidden-text" class="gameboy">congrats! <br /> you found me!</p>
+        <!-- Left Panel -->
+        <aside class="panel panel-left">
 
-    </div>
-
-    <!-- Palette -->
-    <p class="gameboy" id="paletteText">Palette</p>
-    <div id="palette1"></div>
-    <div id="palette2"></div>
-    <div id="palette3"></div>
-    <div id="palette4"></div>
-    <div id="palette5"></div>
-    <div id="palette6"></div>
-
-    <button id="palette1b">Set</button>
-    <button id="palette2b">Set</button>
-    <button id="palette3b">Set</button>
-    <button id="palette4b">Set</button>
-    <button id="palette5b">Set</button>
-    <button id="palette6b">Set</button>
-
-    <div class="canvas flex" id="capture">
-
-            <h3 class="gameboy">Welcome to Pixelator!</h3>
-            <button id="startButton">Start Drawing!</button>       
-            <button id="instructions">Instructions</button>
-
-            <div id="pixelCanvas">
-
+            <div class="tool-group">
+                <button id="eraseAll">Erase All</button>
+                <img src="./img/mega-life.png" id="mega-life" alt="1-Up token" />
             </div>
 
-            <audio autoplay id="music">
-                <source src="./files/1.mp3" type="audio/mpeg">
-                Your browser does not support the audio element.
-            </audio>
+            <img src="./img/megaman.gif" id="megaman" alt="Dancing MegaMan" />
 
-            <audio id="charge">
-                <source src="./files/charge.mp3" type="audio/mpeg">
-                Your browser does not support the audio element.
-            </audio>
+            <div class="tool-group">
+                <p id="saveButton" class="gameboy">Save <br /> Masterpiece</p>
+                <img src="./img/save.png" id="disk" alt="Save your art as a PNG" />
+            </div>
 
-            <audio id="oneUp">
-                <source src="./files/1up.wav" type="audio/mpeg">
-                Your browser does not support the audio element.
-            </audio>
+        </aside>
 
-            <audio id="energyAudio">
-                <source src="./files/BonusBall.wav" type="audio/mpeg">
-                Your browser does not support the audio element.
-            </audio>
+        <!-- Canvas -->
+        <div class="canvas flex" id="capture">
 
-            <!-- Another way to play auido -->
-            <!-- <iframe src="./files/1.mp3" allow="autoplay" style="display:none" id="iframeAudio">
-            </iframe> -->
+            <h3 class="gameboy">Welcome to Pixelator!</h3>
+            <button id="startButton">Start Drawing!</button>
+            <button id="instructions">Instructions</button>
+
+            <div id="pixelCanvas"></div>
+
+        </div>
+
+        <!-- Right Panel -->
+        <aside class="panel panel-right">
+
+            <div class="tool-group">
+                <p class="gameboy label" id="colorText">Selected Color</p>
+                <div id="selectedColor"></div>
+            </div>
+
+            <div class="tool-group">
+                <p class="gameboy label" id="colorPickerText">Color Picker</p>
+                <input type="color" id="colorPicker" aria-label="Pick a drawing colour">
+            </div>
+
+            <div class="tool-group">
+                <p class="gameboy label" id="bgGridText">BG and Grid</p>
+                <div class="row">
+                    <input type="color" id="bgColor" aria-label="Background colour">
+                    <input type="color" id="gridColor" aria-label="Grid line colour">
+                </div>
+            </div>
+
+            <button id="erase">Erase</button>
+
+            <!-- Palette -->
+            <div class="tool-group">
+                <p class="gameboy label" id="paletteText">Palette</p>
+                <div class="palette-grid">
+                    <div class="palette-row">
+                        <div class="swatch" id="palette1"></div><button id="palette1b">Set</button>
+                    </div>
+                    <div class="palette-row">
+                        <div class="swatch" id="palette2"></div><button id="palette2b">Set</button>
+                    </div>
+                    <div class="palette-row">
+                        <div class="swatch" id="palette3"></div><button id="palette3b">Set</button>
+                    </div>
+                    <div class="palette-row">
+                        <div class="swatch" id="palette4"></div><button id="palette4b">Set</button>
+                    </div>
+                    <div class="palette-row">
+                        <div class="swatch" id="palette5"></div><button id="palette5b">Set</button>
+                    </div>
+                    <div class="palette-row">
+                        <div class="swatch" id="palette6"></div><button id="palette6b">Set</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Music Player -->
+            <div class="tool-group music">
+                <img src="./img/music-notes.gif" id="musicNotes" alt="" />
+                <div class="row">
+                    <button id="play">▶ Play</button>
+                    <button id="pause">❚❚ Pause</button>
+                </div>
+                <div class="row">
+                    <button id="previousTrack" aria-label="Previous track">«</button>
+                    <button id="volDown" aria-label="Volume down">-</button>
+                    <button id="volUp" aria-label="Volume up">+</button>
+                    <button id="nextTrack" aria-label="Next track">»</button>
+                </div>
+                <img src="./img/energy.png" id="energy" alt="" />
+            </div>
+
+        </aside>
+
+    </main>
+
+    <!-- Easter egg -->
+    <div class="easter-egg">
+        <img src="./img/hidden-mega.gif" id="hidden-mega" alt="Hidden MegaMan" />
+        <p id="hidden-text" class="gameboy">congrats! <br /> you found me!</p>
     </div>
-
-
 
     <footer>
         <p class="gameboy">Created by Ibra</p>
     </footer>
 
+    <audio autoplay id="music">
+        <source src="./files/1.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <audio id="charge">
+        <source src="./files/charge.mp3" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <audio id="oneUp">
+        <source src="./files/1up.wav" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
+    <audio id="energyAudio">
+        <source src="./files/BonusBall.wav" type="audio/mpeg">
+        Your browser does not support the audio element.
+    </audio>
+
 <!-- for taking screenshots -->
-<!-- <script src="./files/html2canvas.js"></script> -->
 <script src="./files/html2canvas.min.js"></script>
 
 <!-- JQuery -->

@@ -61,19 +61,33 @@ function paintLine(x0, y0, x1, y1){
     }
 }
 
-$(document).on('mouseup', () => { isDrawing = false; lastX = lastY = null; });
-
-$("#pixelCanvas").on('mousedown', '.pixel', (e) => {
-    e.preventDefault(); // stop the browser's native text/image drag
+// Works for both mouse and touch — paintAt() hit-tests with elementFromPoint,
+// so a finger and a cursor are handled by exactly the same code path.
+function pointOf(e){
+    var src = e.originalEvent || e;
+    var touch = src.touches && src.touches[0];
+    if(touch){ return {x: touch.clientX, y: touch.clientY}; }
+    return {x: e.clientX, y: e.clientY};
+}
+function startStroke(e){
+    var p = pointOf(e);
+    e.preventDefault(); // stop native image drag / page scroll while painting
     isDrawing = true;
-    lastX = e.clientX; lastY = e.clientY;
-    paintAt(e.clientX, e.clientY);
-});
-$("#pixelCanvas").on('mousemove', (e) => {
+    lastX = p.x; lastY = p.y;
+    paintAt(p.x, p.y);
+}
+function moveStroke(e){
     if(!isDrawing){ return; }
-    paintLine(lastX, lastY, e.clientX, e.clientY);
-    lastX = e.clientX; lastY = e.clientY;
-});
+    var p = pointOf(e);
+    e.preventDefault();
+    paintLine(lastX, lastY, p.x, p.y);
+    lastX = p.x; lastY = p.y;
+}
+function endStroke(){ isDrawing = false; lastX = lastY = null; }
+
+$("#pixelCanvas").on('mousedown touchstart', startStroke);
+$("#pixelCanvas").on('mousemove touchmove', moveStroke);
+$(document).on('mouseup touchend touchcancel', endStroke);
 //Palette
 $("#palette1b").on('click', () =>{
 $("#palette1").css('background',currentColor);
@@ -231,7 +245,7 @@ $("#eraseAll").on('click', () => {
 
             setTimeout(()=>{
                 $("#megaman").attr('src','./img/mega-shoot.png').css({"height":"92px","width": "105px"});
-                $(".pixel").css("background","white");
+                $(".pixel").css("background",currentBg);
             },2700);
 
             setTimeout(()=>{
@@ -244,7 +258,7 @@ $("#eraseAll").on('click', () => {
 
             setTimeout(()=>{
                 $("#megaman").attr('src','./img/mega-shoot.png').css({"height":"92px","width": "105px"});
-                $(".pixel").css("background","white");
+                $(".pixel").css("background",currentBg);
             },2700);
 
             setTimeout(()=>{
@@ -258,7 +272,7 @@ $("#eraseAll").on('click', () => {
         $("#megaman").attr('src','./img/charge.gif').css({"height":"92px","width": "80px"});
         setTimeout(()=>{
             $("#megaman").attr('src','./img/mega-shoot.png').css({"height":"92px","width": "105px"});
-            $(".pixel").css("background","white");
+            $(".pixel").css("background",currentBg);
         },2700);
         
         setTimeout(()=>{
@@ -288,11 +302,6 @@ $("#disk").on('click', () => {
             'success'
           );
     });
-});
-$("#cleanUp").on('click', () => {
-    $("#render").remove();
-    $("#cleanUp").css('display','none');
-    $("#cleanUpText").css('display','none');
 });
 $("#bgColor").on('change', (e)=> {
     currentBg = e.target.value;
@@ -331,13 +340,35 @@ $("#startButton").remove();
 $("#instructions").remove();
 
 $(".canvas").removeClass("flex");
-$("#pixelCanvas").addClass("flexWrap");
 
-for(var i=0; i<=2203; i++){
-$("#pixelCanvas").append(`<div class="pixel"></div>`);
-}
+buildGrid();
 
 });
+
+// Grid dimensions are chosen for the viewport so pixels stay big enough to
+// hit with a finger on small screens. Cells are sized with fr units in CSS,
+// so the art scales fluidly afterwards (rotating a phone won't wipe it).
+function gridSizeForViewport(){
+    var w = window.innerWidth;
+    if(w >= 900){ return {cols: 58, rows: 38}; }  // the classic desktop grid
+    if(w >= 640){ return {cols: 44, rows: 34}; }
+    return {cols: 32, rows: 36};
+}
+function buildGrid(){
+    var size = gridSizeForViewport();
+    var canvasEl = document.getElementById("pixelCanvas");
+
+    canvasEl.style.setProperty('--cols', size.cols);
+
+    // build in a fragment: one reflow instead of ~2200
+    var frag = document.createDocumentFragment();
+    for(var i = 0; i < size.cols * size.rows; i++){
+        var cell = document.createElement('div');
+        cell.className = 'pixel';
+        frag.appendChild(cell);
+    }
+    canvasEl.appendChild(frag);
+}
 $("#instructions").on('click', (e) =>{
 
     Swal.fire({
