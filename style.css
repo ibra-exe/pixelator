@@ -244,9 +244,10 @@ button {
 
 /************************ Tools ************************/
 
+/* same footprint as the picker beside it, so their labels line up */
 #selectedColor {
-    width: 50px;
-    height: 50px;
+    width: 60px;
+    height: 60px;
     background-color: black;
     border: 3px dotted white;
 }
@@ -295,6 +296,12 @@ button {
 #musicNotes {
     width: 34px;
     height: 34px;
+}
+
+/* notes sit above the transport row, not beside it */
+.music-box .box-body {
+    flex-direction: column;
+    align-items: center;
 }
 
 .transport {
@@ -371,24 +378,26 @@ footer {
 
 /************************ Responsive ************************/
 
-/* Tablet and below: canvas on top, tool panels reflow beneath it */
+/* Tablet and below: canvas on top, tool boxes reflow beneath it */
 @media (max-width: 1023px) {
+    /* Dissolve the two panels so every box can be ordered on its own,
+       independent of which column it sits in on desktop. */
     .app {
-        grid-template-columns: 1fr;
-        justify-items: stretch;
-    }
-
-    .canvas {
-        order: -1;
-        margin: 0 auto;
-    }
-
-    .panel {
-        flex-direction: row;
+        display: flex;
         flex-wrap: wrap;
         justify-content: center;
         align-items: flex-start;
         gap: 16px;
+    }
+
+    .panel {
+        display: contents;
+    }
+
+    .canvas {
+        order: 0;
+        flex: 0 0 100%;
+        margin: 0 auto;
     }
 
     /* boxes become cards that sit side by side and wrap */
@@ -396,6 +405,23 @@ footer {
         flex: 0 1 225px;
         width: auto;
     }
+
+    /* MegaMan takes his own row — otherwise he shares a row with a box,
+       which centres the pair and leaves the box itself off-centre */
+    .mascot {
+        flex: 0 0 100%;
+    }
+
+    /* Ordered by what you reach for while drawing: colour constantly,
+       erase often, canvas setup occasionally, save at the end of a
+       session, music once and forget. */
+    .mascot     { order: 1; }
+    .box-color  { order: 2; }
+    .box-erase  { order: 3; }
+    .box-canvas { order: 4; }
+    .box-save   { order: 5; }
+    .music-box  { order: 6; }
+    #energy     { order: 7; }
 }
 
 /* Phones */
@@ -429,8 +455,11 @@ footer {
         margin: 12px;
     }
 
-    .panel {
-        gap: 14px;
+    /* one tidy centred column: every box the same width as the canvas,
+       edges aligned, mascot on its own line */
+    .box {
+        flex: 0 0 100%;
+        max-width: none;
     }
 
     /* bigger tap targets */
@@ -448,7 +477,8 @@ footer {
         height: 70px;
     }
 
-    #colorPicker {
+    #colorPicker,
+    #selectedColor {
         width: 56px;
         height: 56px;
     }
