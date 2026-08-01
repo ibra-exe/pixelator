@@ -25,6 +25,7 @@ const selectedColorBox = $('#selectedColor');
 const megaman = $('#megaman');
 const playPauseButton = $('#playPause');
 const undoButton = $('#undo');
+const redoButton = $('#redo');
 const volumeInput = $('#volume');
 
 /* ------------------------------------------------------------------ audio */
@@ -54,8 +55,9 @@ once(document, ['click', 'keydown'], tryPlayMusic);
 // An action stores only the cells it changed, mapped to the background they
 // had beforehand — a 200-cell stroke costs 200 entries rather than a full
 // snapshot of the grid. Cells are used as keys directly, so no index lookup.
-const UNDO_LIMIT = 50;
+const HISTORY_LIMIT = 50;
 const undoStack = [];
+const redoStack = [];
 let pendingAction = null;
 
 function beginAction() {
@@ -71,23 +73,36 @@ function recordPixel(cell) {
 function commitAction() {
     if (pendingAction?.size) {
         undoStack.push(pendingAction);
-        if (undoStack.length > UNDO_LIMIT) undoStack.shift();
-        refreshUndoButton();
+        if (undoStack.length > HISTORY_LIMIT) undoStack.shift();
+        redoStack.length = 0; // a fresh action abandons the redo branch
+        refreshHistoryButtons();
     }
     pendingAction = null;
 }
 
-function undo() {
-    const action = undoStack.pop();
+// Undo and redo are the same operation in opposite directions: restore the
+// recorded backgrounds, and hand the values being replaced to the other stack
+// so the step can be reversed again.
+function stepHistory(from, to) {
+    const action = from.pop();
     if (!action) return;
-    action.forEach((previousBackground, cell) => {
-        cell.style.background = previousBackground;
+
+    const inverse = new Map();
+    action.forEach((background, cell) => {
+        inverse.set(cell, cell.style.background);
+        cell.style.background = background;
     });
-    refreshUndoButton();
+
+    to.push(inverse);
+    refreshHistoryButtons();
 }
 
-function refreshUndoButton() {
+const undo = () => stepHistory(undoStack, redoStack);
+const redo = () => stepHistory(redoStack, undoStack);
+
+function refreshHistoryButtons() {
     undoButton.disabled = undoStack.length === 0;
+    redoButton.disabled = redoStack.length === 0;
 }
 
 /** Repaint every cell as a single undoable action. */
@@ -196,7 +211,8 @@ function buildGrid() {
 
     pixels = Array.from(pixelCanvas.children);
     undoStack.length = 0;
-    refreshUndoButton();
+    redoStack.length = 0;
+    refreshHistoryButtons();
 }
 
 /* ---------------------------------------------------------------- palette */
@@ -275,10 +291,19 @@ $('#previousTrack').addEventListener('click', () => changeTrack(-1));
 /* ------------------------------------------------------------------ tools */
 
 undoButton.addEventListener('click', undo);
+redoButton.addEventListener('click', redo);
+
 document.addEventListener('keydown', (event) => {
-    if ((event.ctrlKey || event.metaKey) && event.key?.toLowerCase() === 'z') {
+    if (!(event.ctrlKey || event.metaKey)) return;
+    const key = event.key?.toLowerCase();
+
+    // Ctrl/Cmd+Z undoes, Shift makes it a redo; Ctrl+Y redoes too (Windows).
+    if (key === 'z') {
         event.preventDefault();
-        undo();
+        (event.shiftKey ? redo : undo)();
+    } else if (key === 'y') {
+        event.preventDefault();
+        redo();
     }
 });
 
@@ -412,4 +437,4 @@ $('#instructions').addEventListener('click', () => {
 /* ------------------------------------------------------------------- init */
 
 selectedColorBox.style.background = currentColor;
-refreshUndoButton();
+refreshHistoryButtons();
