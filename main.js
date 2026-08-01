@@ -1,344 +1,415 @@
+'use strict';
 
-var currentColor = "#000";
-var currentBg = "#ffffff";
+/* -------------------------------------------------------------- utilities */
 
-var selectedColorBox = $("#selectedColor");
+const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => Array.from(document.querySelectorAll(selector));
 
-var playingSong = null;
-var musicOn = true;
+/** addEventListener across several event types, firing at most once. */
+function once(target, types, handler) {
+    const wrapped = (event) => {
+        types.forEach((type) => target.removeEventListener(type, wrapped));
+        handler(event);
+    };
+    types.forEach((type) => target.addEventListener(type, wrapped));
+}
 
-//Playlist
-var song1 = './files/1.mp3';
-var song2 = './files/2.mp3';
-var song3 = './files/3.mp3';
-var song4 = './files/4.mp3';
-var playlist = [song1,song2,song3,song4];
+/* ------------------------------------------------------------------ state */
 
-//Audio Settings
-var audio = document.getElementById("music");
+let currentColor = '#000000';
+let currentBg = '#ffffff';
+let musicOn = false;
+let pixels = [];
+
+const selectedColorBox = $('#selectedColor');
+const megaman = $('#megaman');
+const playPauseButton = $('#playPause');
+const undoButton = $('#undo');
+const volumeInput = $('#volume');
+
+/* ------------------------------------------------------------------ audio */
+
+const playlist = ['./files/1.mp3', './files/2.mp3', './files/3.mp3', './files/4.mp3'];
+let playingSong = playlist[0];
+
+const audio = $('#music');
+const chargeSfx = $('#charge');
+const oneUpSfx = $('#oneUp');
+const energySfx = $('#energyAudio');
+
 audio.volume = 0.2;
+chargeSfx.volume = 0.7;
 
 // Browsers block autoplay-with-sound until the user interacts with the page, so
 // calling play() on load only downloaded ~2.7 MB that could never be heard. The
 // audio elements are preload="none"; the first gesture both fetches and starts
 // the track, which then streams as it buffers.
-function tryPlayMusic(){
-    var p = audio.play();
-    if(p && p.catch){ p.catch(function(){}); }
+function tryPlayMusic() {
+    audio.play()?.catch(() => {});
 }
-$(document).one('click keydown', function(){
-    tryPlayMusic();
-});
+once(document, ['click', 'keydown'], tryPlayMusic);
 
-var charge = document.getElementById("charge");
-charge.volume = 0.7;
+/* ----------------------------------------------------------- undo history */
 
-var oneUp = document.getElementById("oneUp");
-var energy = document.getElementById("energyAudio");
+// An action stores only the cells it changed, mapped to the background they
+// had beforehand — a 200-cell stroke costs 200 entries rather than a full
+// snapshot of the grid. Cells are used as keys directly, so no index lookup.
+const UNDO_LIMIT = 50;
+const undoStack = [];
+let pendingAction = null;
 
-$(document).ready(function(){
-    playingSong = playlist[0];
-    console.log("Playing Song: "+playingSong);
-    $("#selectedColor").css('background','black')
-});
-
-//Coloring — click a pixel, or hold and drag to paint. Painting is driven by
-//mousemove (which always fires during a drag) and interpolated along the
-//stroke so fast movements don't leave gaps between pixels.
-var isDrawing = false;
-var lastX = null, lastY = null;
-
-function paintAt(x, y){
-    var el = document.elementFromPoint(x, y);
-    if(el && el.classList.contains('pixel')){
-        el.style.background = currentColor;
-    }
+function beginAction() {
+    pendingAction = new Map();
 }
-function paintLine(x0, y0, x1, y1){
-    var dx = x1 - x0, dy = y1 - y0;
-    var steps = Math.max(1, Math.ceil(Math.hypot(dx, dy) / 4)); // sample every ~4px
-    for(var i = 0; i <= steps; i++){
-        paintAt(x0 + dx * i / steps, y0 + dy * i / steps);
+
+function recordPixel(cell) {
+    if (pendingAction && !pendingAction.has(cell)) {
+        pendingAction.set(cell, cell.style.background);
     }
 }
 
-// Works for both mouse and touch — paintAt() hit-tests with elementFromPoint,
-// so a finger and a cursor are handled by exactly the same code path.
-function pointOf(e){
-    var src = e.originalEvent || e;
-    var touch = src.touches && src.touches[0];
-    if(touch){ return {x: touch.clientX, y: touch.clientY}; }
-    return {x: e.clientX, y: e.clientY};
+function commitAction() {
+    if (pendingAction?.size) {
+        undoStack.push(pendingAction);
+        if (undoStack.length > UNDO_LIMIT) undoStack.shift();
+        refreshUndoButton();
+    }
+    pendingAction = null;
 }
-function startStroke(e){
-    var p = pointOf(e);
-    e.preventDefault(); // stop native image drag / page scroll while painting
+
+function undo() {
+    const action = undoStack.pop();
+    if (!action) return;
+    action.forEach((previousBackground, cell) => {
+        cell.style.background = previousBackground;
+    });
+    refreshUndoButton();
+}
+
+function refreshUndoButton() {
+    undoButton.disabled = undoStack.length === 0;
+}
+
+/** Repaint every cell as a single undoable action. */
+function fillAll(colour) {
+    beginAction();
+    pixels.forEach((cell) => {
+        recordPixel(cell);
+        cell.style.background = colour;
+    });
+    commitAction();
+}
+
+/* ---------------------------------------------------------------- drawing */
+
+// Painting is driven by mousemove (which always fires during a drag) and
+// interpolated along the stroke, so fast movements don't leave gaps. Touch and
+// mouse share one path because paintAt hit-tests with elementFromPoint.
+let isDrawing = false;
+let lastX = null;
+let lastY = null;
+
+function paintAt(x, y) {
+    const element = document.elementFromPoint(x, y);
+    if (element?.classList.contains('pixel')) {
+        recordPixel(element);
+        element.style.background = currentColor;
+    }
+}
+
+function paintLine(x0, y0, x1, y1) {
+    const dx = x1 - x0;
+    const dy = y1 - y0;
+    const steps = Math.max(1, Math.ceil(Math.hypot(dx, dy) / 4)); // sample every ~4px
+    for (let i = 0; i <= steps; i++) {
+        paintAt(x0 + (dx * i) / steps, y0 + (dy * i) / steps);
+    }
+}
+
+function pointOf(event) {
+    const touch = event.touches?.[0];
+    return touch
+        ? { x: touch.clientX, y: touch.clientY }
+        : { x: event.clientX, y: event.clientY };
+}
+
+function startStroke(event) {
+    event.preventDefault(); // stop native image drag / page scroll while painting
+    const { x, y } = pointOf(event);
     isDrawing = true;
-    lastX = p.x; lastY = p.y;
-    paintAt(p.x, p.y);
+    lastX = x;
+    lastY = y;
+    beginAction();
+    paintAt(x, y);
 }
-function moveStroke(e){
-    if(!isDrawing){ return; }
-    var p = pointOf(e);
-    e.preventDefault();
-    paintLine(lastX, lastY, p.x, p.y);
-    lastX = p.x; lastY = p.y;
+
+function moveStroke(event) {
+    if (!isDrawing) return;
+    event.preventDefault();
+    const { x, y } = pointOf(event);
+    paintLine(lastX, lastY, x, y);
+    lastX = x;
+    lastY = y;
 }
-function endStroke(){ isDrawing = false; lastX = lastY = null; }
 
-$("#pixelCanvas").on('mousedown touchstart', startStroke);
-$("#pixelCanvas").on('mousemove touchmove', moveStroke);
-$(document).on('mouseup touchend touchcancel', endStroke);
-//Palette
-$("#palette1b").on('click', () =>{
-$("#palette1").css('background',currentColor);
-});
-$("#palette1").on('click', () =>{
-currentColor = $("#palette1").css('background-color');
-selectedColorBox.css('background',currentColor);
-console.log("palette1: "+$("#palette1").css('background'));
+function endStroke() {
+    if (!isDrawing) return;
+    isDrawing = false;
+    lastX = lastY = null;
+    commitAction();
+}
+
+const pixelCanvas = $('#pixelCanvas');
+// passive:false so preventDefault actually suppresses touch scrolling
+pixelCanvas.addEventListener('mousedown', startStroke);
+pixelCanvas.addEventListener('touchstart', startStroke, { passive: false });
+pixelCanvas.addEventListener('mousemove', moveStroke);
+pixelCanvas.addEventListener('touchmove', moveStroke, { passive: false });
+['mouseup', 'touchend', 'touchcancel'].forEach((type) =>
+    document.addEventListener(type, endStroke)
+);
+
+/* ------------------------------------------------------------------ grid */
+
+// Dimensions are chosen for the viewport so pixels stay big enough to hit with
+// a finger. Cells are sized with fr units in CSS, so the art scales fluidly
+// afterwards (rotating a phone won't wipe it).
+function gridSizeForViewport() {
+    const width = window.innerWidth;
+    if (width >= 900) return { cols: 58, rows: 38 }; // the classic desktop grid
+    if (width >= 640) return { cols: 44, rows: 34 };
+    return { cols: 32, rows: 36 };
+}
+
+function buildGrid() {
+    const { cols, rows } = gridSizeForViewport();
+    pixelCanvas.style.setProperty('--cols', cols);
+
+    // build in a fragment: one reflow instead of ~2200
+    const fragment = document.createDocumentFragment();
+    for (let i = 0; i < cols * rows; i++) {
+        const cell = document.createElement('div');
+        cell.className = 'pixel';
+        fragment.appendChild(cell);
+    }
+    pixelCanvas.appendChild(fragment);
+
+    pixels = Array.from(pixelCanvas.children);
+    undoStack.length = 0;
+    refreshUndoButton();
+}
+
+/* ---------------------------------------------------------------- palette */
+
+// One loop over the markup, rather than six near-identical handler pairs.
+$$('.palette-row').forEach((row) => {
+    const swatch = row.querySelector('.swatch');
+    const setButton = row.querySelector('button');
+
+    setButton.addEventListener('click', () => {
+        swatch.style.background = currentColor;
+    });
+    swatch.addEventListener('click', () => {
+        currentColor = getComputedStyle(swatch).backgroundColor;
+        selectedColorBox.style.background = currentColor;
+    });
 });
 
-$("#palette2b").on('click', () =>{
-    $("#palette2").css('background',currentColor);
-});
-$("#palette2").on('click', () =>{
-    currentColor = $("#palette2").css('background-color');
-    selectedColorBox.css('background',currentColor);
-});
+/* ------------------------------------------------------------------ music */
 
-$("#palette3b").on('click', () =>{
-    $("#palette3").css('background',currentColor);
-});
-$("#palette3").on('click', () =>{
-    currentColor = $("#palette3").css('background-color');
-    selectedColorBox.css('background',currentColor);
-});
-
-$("#palette4b").on('click', () =>{
-    $("#palette4").css('background',currentColor);
-});
-$("#palette4").on('click', () =>{
-    currentColor = $("#palette4").css('background-color');
-    selectedColorBox.css('background',currentColor);
-});
-
-$("#palette5b").on('click', () =>{
-    $("#palette5").css('background',currentColor);
-});
-$("#palette5").on('click', () =>{
-    currentColor = $("#palette5").css('background-color');
-    selectedColorBox.css('background',currentColor);
-});
-
-$("#palette6b").on('click', () =>{
-    $("#palette6").css('background',currentColor);
-});
-$("#palette6").on('click', () =>{
-    currentColor = $("#palette6").css('background-color');
-    selectedColorBox.css('background',currentColor);
-});
-
-//Music Buttons
+function setMega(src, width) {
+    megaman.setAttribute('src', src);
+    megaman.style.width = `${width}px`;
+    megaman.style.height = '92px';
+}
 
 // The audio element is the source of truth — autoplay can be blocked and a
-// track can end on its own, so the button label is derived from it rather
-// than tracked separately. Called on click too: .paused flips synchronously
-// but the play/pause events don't, so the label would otherwise lag a tick.
-function syncPlayButton(){
-    var playing = !audio.paused;
+// track can end on its own, so the button label is derived from it rather than
+// tracked separately. Called on click too: .paused flips synchronously but the
+// play/pause events don't, so the label would otherwise lag a tick.
+function syncPlayButton() {
+    const playing = !audio.paused;
     musicOn = playing;
-    $('#playPause').text(playing ? '❚❚' : '▶')
-                   .attr('aria-label', playing ? 'Pause' : 'Play');
+    playPauseButton.textContent = playing ? '❚❚' : '▶';
+    playPauseButton.setAttribute('aria-label', playing ? 'Pause' : 'Play');
 }
 audio.addEventListener('play', syncPlayButton);
 audio.addEventListener('pause', syncPlayButton);
 
-$("#playPause").on('click', () => {
-    if(audio.paused){
+playPauseButton.addEventListener('click', () => {
+    if (audio.paused) {
         tryPlayMusic();
-        $('#megaman').attr('src','./img/megaman.gif');
+        megaman.setAttribute('src', './img/megaman.gif');
     } else {
         audio.pause();
-        $('#megaman').attr('src','./img/mega-default.png');
+        megaman.setAttribute('src', './img/mega-default.png');
     }
     syncPlayButton();
 });
 
-$("#volume").on('input', (e) => {
-    audio.volume = Math.min(1, Math.max(0, e.target.value / 100));
+volumeInput.addEventListener('input', (event) => {
+    audio.volume = Math.min(1, Math.max(0, event.target.value / 100));
 });
+
 // Next/previous share one implementation instead of two mirrored if-chains.
 // Note the audio element needs .load() after the src changes, otherwise the
 // new track is never actually picked up.
-function changeTrack(delta){
-    var mega = $('#megaman').attr('src');
-    $('#megaman').attr('src', mega.indexOf('megaman.gif') > -1
-        ? './img/mega-dance.gif'
-        : './img/megaman.gif');
+function changeTrack(delta) {
+    const current = megaman.getAttribute('src');
+    megaman.setAttribute(
+        'src',
+        current.includes('megaman.gif') ? './img/mega-dance.gif' : './img/megaman.gif'
+    );
 
-    var idx = playlist.indexOf(playingSong);
-    if(idx === -1){ idx = 0; }
-    idx = (idx + delta + playlist.length) % playlist.length;
+    const index = Math.max(0, playlist.indexOf(playingSong));
+    playingSong = playlist[(index + delta + playlist.length) % playlist.length];
 
-    playingSong = playlist[idx];
-    $('#music').attr('src', playingSong);
+    audio.setAttribute('src', playingSong);
     audio.load();
-    audio.volume = Math.min(1, Math.max(0, $("#volume").val() / 100));
+    audio.volume = Math.min(1, Math.max(0, volumeInput.value / 100));
     tryPlayMusic();
 }
-$("#nextTrack").on('click', () => changeTrack(1));
-$("#previousTrack").on('click', () => changeTrack(-1));
+$('#nextTrack').addEventListener('click', () => changeTrack(1));
+$('#previousTrack').addEventListener('click', () => changeTrack(-1));
 
-//Tools
-$("#erase").on('click', () => {
+/* ------------------------------------------------------------------ tools */
+
+undoButton.addEventListener('click', undo);
+document.addEventListener('keydown', (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key?.toLowerCase() === 'z') {
+        event.preventDefault();
+        undo();
+    }
+});
+
+$('#erase').addEventListener('click', () => {
     // "Erase" paints with the current background colour so squares blend back in
     currentColor = currentBg;
-    selectedColorBox.css("background-color", currentBg);
+    selectedColorBox.style.background = currentBg;
 });
-$("#colorPicker").on('change', (e)=> {
 
-    selectedColorBox.css("background-color",e.target.value);
-    console.log("Color: "+e.target.value);
-    currentColor = e.target.value;
-
-    console.log("Current Color: "+currentColor);
-
+$('#colorPicker').addEventListener('change', (event) => {
+    currentColor = event.target.value;
+    selectedColorBox.style.background = currentColor;
 });
-$("#eraseAll").on('click', () => {
-    charge.play();
 
-    // Whichever sprite MegaMan is wearing, he charges, fires, then goes back
-    // to it. The blast itself always happens — the old version only cleared
-    // the canvas when the sprite matched one of two exact filenames.
-    var current = $("#megaman").attr('src');
-    var restoreTo = !musicOn ? './img/mega-default.png'
-                  : (current.indexOf('mega-dance') > -1 ? './img/mega-dance.gif'
-                                                        : './img/megaman.gif');
+$('#eraseAll').addEventListener('click', () => {
+    chargeSfx.play();
 
-    $("#megaman").attr('src','./img/charge.gif').css({"height":"92px","width":"80px"});
+    // Whichever sprite MegaMan is wearing, he charges, fires, then goes back to
+    // it. The blast itself always happens — an older version only cleared the
+    // canvas when the sprite matched one of two exact filenames.
+    const current = megaman.getAttribute('src');
+    const restoreTo = !musicOn
+        ? './img/mega-default.png'
+        : current.includes('mega-dance')
+            ? './img/mega-dance.gif'
+            : './img/megaman.gif';
 
-    setTimeout(()=>{
-        $("#megaman").attr('src','./img/mega-shoot.png').css({"height":"92px","width":"105px"});
-        $(".pixel").css("background", currentBg);
-    },2700);
-
-    setTimeout(()=>{
-        $("#megaman").attr('src', restoreTo).css({"height":"92px","width":"77px"});
-    },4000);
+    setMega('./img/charge.gif', 80);
+    setTimeout(() => {
+        setMega('./img/mega-shoot.png', 105);
+        fillAll(currentBg);
+    }, 2700);
+    setTimeout(() => setMega(restoreTo, 77), 4000);
 });
+
+$('#bgColor').addEventListener('change', (event) => {
+    currentBg = event.target.value;
+    fillAll(currentBg);
+});
+
+$('#gridColor').addEventListener('change', (event) => {
+    pixels.forEach((cell) => {
+        cell.style.borderColor = event.target.value;
+    });
+});
+
+/* ------------------------------------------------------------------- save */
+
 // html2canvas is ~160 KB and only ever needed once someone saves, so it is
 // fetched on the first click instead of on every page load.
-function loadHtml2Canvas(){
-    if(window.html2canvas){ return Promise.resolve(); }
-    if(!loadHtml2Canvas.pending){
-        loadHtml2Canvas.pending = new Promise((resolve, reject) => {
-            var s = document.createElement('script');
-            s.src = './files/html2canvas.min.js';
-            s.onload = resolve;
-            s.onerror = () => { loadHtml2Canvas.pending = null; reject(); };
-            document.head.appendChild(s);
-        });
-    }
+function loadHtml2Canvas() {
+    if (window.html2canvas) return Promise.resolve();
+    loadHtml2Canvas.pending ??= new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = './files/html2canvas.min.js';
+        script.onload = resolve;
+        script.onerror = () => {
+            loadHtml2Canvas.pending = null;
+            reject();
+        };
+        document.head.appendChild(script);
+    });
     return loadHtml2Canvas.pending;
 }
 
-$("#disk").on('click', () => {
-    loadHtml2Canvas().then(() => {
-        return html2canvas(document.querySelector("#capture"));
-    }).then(canvas => {
-        canvas.toBlob((blob) => {
-            var link = document.createElement('a');
-            link.download = 'pixelator-art.png';
-            link.href = URL.createObjectURL(blob);
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(link.href);
+$('#disk').addEventListener('click', () => {
+    loadHtml2Canvas()
+        .then(() => html2canvas($('#capture')))
+        .then((canvas) => {
+            canvas.toBlob((blob) => {
+                const link = document.createElement('a');
+                link.download = 'pixelator-art.png';
+                link.href = URL.createObjectURL(blob);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(link.href);
+            });
+
+            Swal.fire('Masterpiece Saved!', 'Your art was downloaded as pixelator-art.png.', 'success');
+        })
+        .catch(() => {
+            Swal.fire(
+                'Could not save',
+                'The image library failed to load. Check your connection and try again.',
+                'error'
+            );
         });
-
-        Swal.fire(
-            'Masterpiece Saved!',
-            'Your art was downloaded as pixelator-art.png.',
-            'success'
-          );
-    }).catch(() => {
-        Swal.fire('Could not save', 'The image library failed to load. Check your connection and try again.', 'error');
-    });
-});
-$("#bgColor").on('change', (e)=> {
-    currentBg = e.target.value;
-    $(".pixel").css("background-color",e.target.value);
-});
-$("#gridColor").on('change', (e)=> {
-
-    $(".pixel").css("border-color",e.target.value);
-
 });
 
-$("#hidden-mega").on('click', () => {
-oneUp.play();
-$('#mega-life').css('display','block');
-Swal.fire(
-    'Congrats!',
-    'You found the hidden MegaMan! you deserve a 1-Up! Check upper left corner. This token is a proof that you found the hidden MegaMan',
-    'success'
-  );
+/* ------------------------------------------------------------ easter eggs */
+
+$('#energy').addEventListener('click', () => {
+    energySfx.play();
+    $('#hidden-mega').style.display = 'block';
+    $('#hidden-text').style.display = 'block';
 });
 
-$("#energy").on('click', () => {
-    energy.play();
-    $('#hidden-mega').css('display','block');
-    $('#hidden-text').css('display','block');
-
+$('#hidden-mega').addEventListener('click', () => {
+    oneUpSfx.play();
+    $('#mega-life').style.display = 'block';
+    Swal.fire(
+        'Congrats!',
+        'You found the hidden MegaMan! you deserve a 1-Up! Check upper left corner. ' +
+            'This token is a proof that you found the hidden MegaMan',
+        'success'
+    );
 });
 
-//Main Screen
-$("#startButton").on('click', (e) => {
+/* ------------------------------------------------------------ main screen */
 
-console.log("Start Button Clicked!");
-
-$(".canvas h3").remove();
-$("#startButton").remove();
-$("#instructions").remove();
-
-$(".canvas").removeClass("flex");
-
-buildGrid();
-
+$('#startButton').addEventListener('click', () => {
+    $('.canvas h3').remove();
+    $('#startButton').remove();
+    $('#instructions').remove();
+    $('.canvas').classList.remove('flex');
+    buildGrid();
 });
 
-// Grid dimensions are chosen for the viewport so pixels stay big enough to
-// hit with a finger on small screens. Cells are sized with fr units in CSS,
-// so the art scales fluidly afterwards (rotating a phone won't wipe it).
-function gridSizeForViewport(){
-    var w = window.innerWidth;
-    if(w >= 900){ return {cols: 58, rows: 38}; }  // the classic desktop grid
-    if(w >= 640){ return {cols: 44, rows: 34}; }
-    return {cols: 32, rows: 36};
-}
-function buildGrid(){
-    var size = gridSizeForViewport();
-    var canvasEl = document.getElementById("pixelCanvas");
-
-    canvasEl.style.setProperty('--cols', size.cols);
-
-    // build in a fragment: one reflow instead of ~2200
-    var frag = document.createDocumentFragment();
-    for(var i = 0; i < size.cols * size.rows; i++){
-        var cell = document.createElement('div');
-        cell.className = 'pixel';
-        frag.appendChild(cell);
-    }
-    canvasEl.appendChild(frag);
-}
-$("#instructions").on('click', (e) =>{
-
+$('#instructions').addEventListener('click', () => {
     Swal.fire({
         title: 'Instructions',
-        text: 'Create your pixel art masterpiece using tools on the left and right panels of the screen! There is a hidden MegaMan in the screen, try to find him! (No, not the one on the left side :p)',
-        confirmButtonText: 'Okay'
-      });
+        text:
+            'Create your pixel art masterpiece using tools on the left and right panels ' +
+            'of the screen! There is a hidden MegaMan in the screen, try to find him! ' +
+            '(No, not the one on the left side :p)',
+        confirmButtonText: 'Okay',
+    });
+});
 
-    console.log("Instructions Button Clicked!")
-})
+/* ------------------------------------------------------------------- init */
+
+selectedColorBox.style.background = currentColor;
+refreshUndoButton();

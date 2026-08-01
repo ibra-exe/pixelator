@@ -46,9 +46,10 @@
                 <img src="./img/megaman.gif" id="megaman" alt="Dancing MegaMan" />
             </div>
 
-            <section class="box box-erase">
-                <h2 class="box-title gameboy">Erase</h2>
+            <section class="box box-edit">
+                <h2 class="box-title gameboy">Edit</h2>
                 <div class="box-body">
+                    <button id="undo" title="Undo the last change (Ctrl+Z)" disabled>« Back</button>
                     <button id="erase">Erase</button>
                     <button id="eraseAll">Erase All</button>
                 </div>
@@ -180,9 +181,6 @@
         <source src="./files/BonusBall.wav" type="audio/mpeg">
         Your browser does not support the audio element.
     </audio>
-
-<!-- JQuery -->
-<script src="./files/jquery-3.5.1.min.js"></script>
 
 <!-- SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
